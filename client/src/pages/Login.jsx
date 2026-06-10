@@ -19,8 +19,8 @@ export default function Login({ onLogin }) {
   return (
     <div className="login-wrap">
       <form className="card login-card" onSubmit={submit}>
-        <h1><span className="bolt">⚡</span> Olimpo</h1>
-        <p className="sub">Tu escritorio, en lo alto del monte</p>
+        <h1>OLIMPO<span className="bolt">_</span></h1>
+        <p className="sub">&gt; root@olimpo:/escritorio$ acceso_requerido</p>
         {error && <div className="error-msg">{error}</div>}
         <div className="field">
           <input

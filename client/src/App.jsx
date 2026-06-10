@@ -11,13 +11,13 @@ import Gym from './pages/Gym';
 import Ajustes from './pages/Ajustes';
 
 const NAV = [
-  { to: '/', glyph: '◈', label: 'Panel' },
-  { to: '/facturas', glyph: '𓂃', label: 'Facturas' },
-  { to: '/clientes', glyph: '◉', label: 'Clientes' },
-  { to: '/tareas', glyph: '✓', label: 'Tareas' },
-  { to: '/notas', glyph: '✎', label: 'Notas' },
-  { to: '/gym', glyph: '⚒', label: 'Gym' },
-  { to: '/ajustes', glyph: '⚙', label: 'Ajustes' },
+  { to: '/', glyph: '01', label: 'Panel' },
+  { to: '/facturas', glyph: '02', label: 'Facturas' },
+  { to: '/clientes', glyph: '03', label: 'Clientes' },
+  { to: '/tareas', glyph: '04', label: 'Tareas' },
+  { to: '/notas', glyph: '05', label: 'Notas' },
+  { to: '/gym', glyph: '06', label: 'Gym' },
+  { to: '/ajustes', glyph: '07', label: 'Ajustes' },
 ];
 
 export default function App() {
@@ -39,7 +39,7 @@ export default function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="wordmark">
-          <span className="bolt">⚡</span> Olimpo
+          OLIMPO<span className="bolt">_</span>
         </div>
         <nav className="nav">
           {NAV.map((n) => (

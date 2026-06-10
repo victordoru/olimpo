@@ -6,7 +6,7 @@ const STATUS_LABEL = { en_curso: 'En curso', pendiente: 'Pendiente', hecha: 'Hec
 const NEXT_STATUS = { pendiente: 'en_curso', en_curso: 'hecha', hecha: 'pendiente' };
 const PRIORITIES = ['', 'baja', 'media', 'alta', 'urgente'];
 const PRIORITY_LABEL = { '': '—', baja: 'Baja', media: 'Media', alta: 'Alta', urgente: 'Urgente' };
-const PALETTE = ['#b3471d', '#5f6b3c', '#1d6a9e', '#8a5fa0', '#8a6210', '#9e3554', '#3c6b62'];
+const PALETTE = ['#39ff14', '#f2f2f2', '#525252', '#9bff7a', '#2bd60e', '#8c8c8c', '#1d6a9e'];
 
 function StatusIcon({ status, onClick }) {
   return (
