@@ -32,11 +32,16 @@ Autenticación: header `Authorization: Bearer <AGENT_API_KEY>` en todas las llam
 - `GET /clients` → lista (usa esto para resolver nombres → ids).
 - `POST /clients` → `{ "name": "...", "nif": "", "address": "", "city": "", "zip": "", "email": "", "motivo": "..." }` ⚠️ fuera de la lista blanca del agente: pídele a Victor que lo cree en la web, o pide que se amplíe la lista.
 
-## Tareas
+## Tareas y proyectos
 
-- `GET /tasks?when=today|pending|all` → tareas. `today` = pendientes que vencen hoy.
-- `POST /tasks` → `{ "text": "Llamar al gestor", "due": "2026-06-12", "motivo": "..." }` (`due` opcional).
-- `PATCH /tasks/:id` → `{ "done": true }` para completar, o cambiar `text`/`due`.
+Las tareas se organizan en proyectos (áreas de vida: trabajo, casa, salud…) y tienen
+estado (`pendiente` → `en_curso` → `hecha`) y prioridad (`baja|media|alta|urgente`).
+
+- `GET /projects` → áreas con su recuento de tareas sin terminar (úsalo para resolver nombre → id).
+- `POST /projects` → `{ "name": "Salud", "color": "#5f6b3c", "motivo": "..." }`.
+- `GET /tasks?when=today|pending|all&project=<id|none>&status=<estado>` → filtros combinables. `today` = sin terminar que vencen hoy (úsalo para el resumen matinal).
+- `POST /tasks` → `{ "text": "Llamar al gestor", "due": "2026-06-12", "project": "<id>", "priority": "alta", "motivo": "..." }` (todo opcional salvo `text`).
+- `PATCH /tasks/:id` → cambia `status`, `text`, `due`, `priority` o `project`. `{ "done": true }` también vale como atajo de `status: "hecha"`.
 
 ## Notas
 

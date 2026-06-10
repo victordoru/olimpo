@@ -5,6 +5,7 @@ const AuditLog = require('../models/AuditLog');
 const AGENT_WRITE_WHITELIST = [
   '/invoices', // crear borradores y editarlos (la ruta valida que sean borradores)
   '/tasks',
+  '/projects', // crear/editar áreas de tareas (borrar sigue vetado)
   '/notes',
   '/workouts',
 ];

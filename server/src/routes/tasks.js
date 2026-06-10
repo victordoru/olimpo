@@ -1,29 +1,55 @@
 const express = require('express');
 const Task = require('../models/Task');
+const Project = require('../models/Project');
 
 const router = express.Router();
 
-// /api/tasks?when=today | pending | all
+// Filtros combinables:
+//   ?when=today | pending | all   (pending = no hechas; por defecto)
+//   ?project=<id> | none          (none = sin proyecto)
+//   ?status=pendiente | en_curso | hecha
 router.get('/', async (req, res) => {
-  const { when = 'pending' } = req.query;
-  let filter = {};
-  if (when === 'pending') filter = { done: false };
+  const { when = 'pending', project, status } = req.query;
+  const filter = {};
+  if (status) filter.status = status;
+  else if (when === 'pending') filter.status = { $ne: 'hecha' };
   if (when === 'today') {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
-    filter = { done: false, due: { $gte: start, $lt: end } };
+    filter.status = { $ne: 'hecha' };
+    filter.due = { $gte: start, $lt: end };
   }
-  res.json(await Task.find(filter).sort({ due: 1, createdAt: 1 }));
+  if (project === 'none') filter.project = null;
+  else if (project) filter.project = project;
+
+  res.json(await Task.find(filter).populate('project', 'name color').sort({ due: 1, createdAt: 1 }));
 });
+
+async function resolveProject(projectId) {
+  if (projectId === undefined) return undefined;
+  if (!projectId) return null;
+  const project = await Project.findById(projectId);
+  if (!project) {
+    const all = await Project.find().select('name');
+    throw new Error(`Proyecto no encontrado. Disponibles: ${all.map((p) => `${p.name} (${p._id})`).join(', ') || 'ninguno'}`);
+  }
+  return project._id;
+}
 
 router.post('/', async (req, res) => {
   try {
-    const { text, due } = req.body;
+    const { text, due, priority, status, project } = req.body;
     if (!text) return res.status(400).json({ error: 'Falta "text": qué hay que hacer' });
-    const task = await Task.create({ text, due: due ? new Date(due) : null });
-    res.status(201).json(task);
+    const task = await Task.create({
+      text,
+      due: due ? new Date(due) : null,
+      priority: priority || '',
+      status: status || 'pendiente',
+      project: (await resolveProject(project)) ?? null,
+    });
+    res.status(201).json(await task.populate('project', 'name color'));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -35,12 +61,16 @@ router.patch('/:id', async (req, res) => {
     if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
     if (req.body.text !== undefined) task.text = req.body.text;
     if (req.body.due !== undefined) task.due = req.body.due ? new Date(req.body.due) : null;
-    if (req.body.done !== undefined) {
-      task.done = Boolean(req.body.done);
-      task.doneAt = task.done ? new Date() : null;
+    if (req.body.priority !== undefined) task.priority = req.body.priority;
+    if (req.body.project !== undefined) task.project = await resolveProject(req.body.project);
+    // Compatibilidad: done:true equivale a status:'hecha'.
+    if (req.body.done !== undefined) req.body.status = req.body.done ? 'hecha' : 'pendiente';
+    if (req.body.status !== undefined) {
+      task.status = req.body.status;
+      task.doneAt = task.status === 'hecha' ? new Date() : null;
     }
     await task.save();
-    res.json(task);
+    res.json(await task.populate('project', 'name color'));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

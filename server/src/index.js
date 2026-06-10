@@ -20,6 +20,7 @@ api.use(requireAuth, agentGuard);
 api.use('/clients', require('./routes/clients'));
 api.use('/invoices', require('./routes/invoices'));
 api.use('/tasks', require('./routes/tasks'));
+api.use('/projects', require('./routes/projects'));
 api.use('/notes', require('./routes/notes'));
 api.use('/workouts', require('./routes/workouts'));
 api.use('/settings', require('./routes/settings'));
