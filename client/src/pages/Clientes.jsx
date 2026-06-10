@@ -38,7 +38,7 @@ export default function Clientes() {
       {error && <div className="error-msg">{error}</div>}
 
       {form && (
-        <div className="card pad" style={{ marginBottom: 22 }}>
+        <div className="card pad light" style={{ marginBottom: 22 }}>
           <h3 style={{ marginBottom: 16 }}>{form._id ? 'Editar cliente' : 'Nuevo cliente'}</h3>
           <div className="field-row">
             <div className="field"><label>Nombre / Razón social</label><input value={form.name} onChange={set('name')} /></div>
@@ -58,8 +58,8 @@ export default function Clientes() {
         </div>
       )}
 
-      <div className="card">
-        <table className="list">
+      <div className="card light table-card">
+        <table className="list client-table">
           <thead>
             <tr><th>Nombre</th><th>NIF</th><th>Ciudad</th><th>Email</th><th></th></tr>
           </thead>

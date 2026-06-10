@@ -5,7 +5,7 @@ const multer = require('multer');
 const Invoice = require('../models/Invoice');
 const Client = require('../models/Client');
 const Settings = require('../models/Settings');
-const { generateInvoicePdf, STORAGE_DIR } = require('../services/pdf');
+const { generateInvoicePdf, renderInvoiceHtml, STORAGE_DIR } = require('../services/pdf');
 const { parseInvoiceText } = require('../services/nl');
 
 const router = express.Router();
@@ -98,6 +98,16 @@ router.get('/:id', async (req, res) => {
   const invoice = await Invoice.findById(req.params.id).populate('client');
   if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
   res.json(invoice);
+});
+
+// Previsualización HTML con la misma plantilla que se usa para generar el PDF.
+router.get('/:id/preview', async (req, res) => {
+  const invoice = await Invoice.findById(req.params.id).populate('client');
+  if (!invoice) return res.status(404).send('Factura no encontrada');
+
+  if (!invoice.clientSnapshot && invoice.client) invoice.clientSnapshot = invoice.client.toObject();
+  const settings = await Settings.get();
+  res.type('html').send(renderInvoiceHtml(invoice, settings));
 });
 
 // Crear borrador.

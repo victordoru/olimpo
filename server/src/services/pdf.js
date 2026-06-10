@@ -25,7 +25,7 @@ const fecha = (d) =>
 const esc = (s) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function renderHtml(invoice, settings) {
+function renderInvoiceHtml(invoice, settings) {
   const client = invoice.clientSnapshot || invoice.client || {};
   const isDraft = invoice.status === 'borrador';
 
@@ -85,7 +85,7 @@ async function generateInvoicePdf(invoice, settings) {
     : `borrador-${invoice._id}.pdf`;
   const outPath = path.join(STORAGE_DIR, filename);
 
-  const html = renderHtml(invoice, settings);
+  const html = renderInvoiceHtml(invoice, settings);
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
@@ -97,4 +97,4 @@ async function generateInvoicePdf(invoice, settings) {
   return { path: outPath, filename };
 }
 
-module.exports = { generateInvoicePdf, STORAGE_DIR };
+module.exports = { generateInvoicePdf, renderInvoiceHtml, STORAGE_DIR };

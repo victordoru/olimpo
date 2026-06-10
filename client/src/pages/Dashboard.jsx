@@ -26,24 +26,24 @@ export default function Dashboard() {
       </div>
 
       <div className="stat-grid">
-        <div className="card stat">
+        <div className="card stat light">
           <div className="label">Pendiente de cobro</div>
           <div className="value terra">{euros(summary?.pendienteCobro?.total)}</div>
           <div className="hint">{summary?.pendienteCobro?.facturas ?? 0} facturas enviadas</div>
         </div>
-        <div className="card stat">
+        <div className="card stat light">
           <div className="label">Facturado en {year}</div>
           <div className="value">{euros(thisYear?.total)}</div>
           <div className="hint">{thisYear?.facturas ?? 0} facturas emitidas</div>
         </div>
-        <div className="card stat">
+        <div className="card stat light">
           <div className="label">Tareas pendientes</div>
           <div className="value">{tasks.length}</div>
           <div className="hint"><Link to="/tareas">ver tareas</Link></div>
         </div>
       </div>
 
-      <div className="card">
+      <div className="card light table-card">
         <table className="list">
           <thead>
             <tr><th>Próximas tareas</th><th className="num">Fecha</th></tr>

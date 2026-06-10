@@ -38,7 +38,7 @@ export default function Ajustes() {
 
       {error && <div className="error-msg">{error}</div>}
 
-      <div className="card pad" style={{ maxWidth: 640 }}>
+      <div className="card pad light" style={{ maxWidth: 640 }}>
         <div className="field-row">
           <div className="field"><label>Nombre / Razón social</label><input value={s.businessName} onChange={set('businessName')} /></div>
           <div className="field" style={{ maxWidth: 180 }}><label>NIF</label><input value={s.nif} onChange={set('nif')} /></div>

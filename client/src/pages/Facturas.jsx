@@ -10,11 +10,93 @@ const TABS = [
 
 const emptyItem = () => ({ concept: '', quantity: 1, price: '' });
 
+const invoiceClient = (invoice) => invoice.clientSnapshot || invoice.client || {};
+
+function InvoicePaper({ invoice, settings }) {
+  const client = invoiceClient(invoice);
+  const isDraft = invoice.status === 'borrador';
+  const issueDate = fecha(invoice.issueDate || invoice.createdAt);
+  const base = invoice.base ?? invoice.items.reduce((sum, it) => sum + it.quantity * it.price, 0);
+  const iva = invoice.iva ?? base * (invoice.ivaPct / 100);
+  const irpf = invoice.irpf ?? base * (invoice.irpfPct / 100);
+  const total = invoice.total ?? base + iva - irpf;
+  const businessAddress = [settings?.address, [settings?.zip, settings?.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  const clientAddress = [client.address, [client.zip, client.city].filter(Boolean).join(' '), client.country].filter(Boolean);
+
+  return (
+    <article className="invoice-paper">
+      {isDraft && <div className="draft-mark">BORRADOR</div>}
+      <header>
+        <div className="brand">
+          <h1>{settings?.businessName || 'Configura tus datos en Ajustes'}</h1>
+          <p>
+            {settings?.nif && <>NIF: {settings.nif}<br /></>}
+            {businessAddress && <>{businessAddress}<br /></>}
+            {[settings?.email, settings?.phone].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+        <div className="invoice-meta">
+          <div className="number">{isDraft ? 'Borrador' : `Factura Nº ${invoice.number}`}</div>
+          <p>Fecha: {issueDate}</p>
+        </div>
+      </header>
+
+      {invoice.subject && <div className="subject">{invoice.subject}</div>}
+
+      <section className="client-box">
+        <div className="label">Facturar a</div>
+        <div className="name">{client.name}</div>
+        <p>
+          {client.nif && <>NIF: {client.nif}<br /></>}
+          {clientAddress.map((line) => <span key={line}>{line}<br /></span>)}
+        </p>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th className="num">Cantidad</th>
+            <th className="num">Precio</th>
+            <th className="num">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoice.items.map((item, index) => (
+            <tr key={`${item.concept}-${index}`}>
+              <td>{item.concept}</td>
+              <td className="num">{item.quantity}</td>
+              <td className="num">{euros(item.price)}</td>
+              <td className="num">{euros(item.quantity * item.price)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="paper-totals">
+        <div className="row"><span>Base imponible</span><span>{euros(base)}</span></div>
+        <div className="row"><span>IVA ({invoice.ivaPct}%)</span><span>{euros(iva)}</span></div>
+        <div className="row"><span>IRPF (-{invoice.irpfPct}%)</span><span>-{euros(irpf)}</span></div>
+        <div className="row total"><span>Total</span><span>{euros(total)}</span></div>
+      </div>
+
+      <footer>
+        <div className="payment">
+          <div className="label">Forma de pago</div>
+          <p>Transferencia bancaria<br />{settings?.iban || ''}</p>
+        </div>
+        <p className="small">{[invoice.notes, settings?.invoiceNote].filter(Boolean).join(' ')}</p>
+      </footer>
+    </article>
+  );
+}
+
 export default function Facturas() {
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [settings, setSettings] = useState(null);
   const [tab, setTab] = useState('');
+  const [previewId, setPreviewId] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null); // factura en edición (borrador)
   const [error, setError] = useState('');
@@ -45,6 +127,7 @@ export default function Facturas() {
   }, []);
 
   const visible = tab ? invoices.filter((i) => i.status === tab) : invoices;
+  const preview = visible.find((i) => i._id === previewId) || null;
 
   const totals = useMemo(() => {
     const base = form.items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.price) || 0), 0);
@@ -210,7 +293,7 @@ export default function Facturas() {
   };
 
   return (
-    <div className="page">
+    <div className="page invoices-page">
       <div className="page-head">
         <div>
           <h1>Facturas</h1>
@@ -254,7 +337,7 @@ export default function Facturas() {
       </div>
 
       {showForm && (
-        <div className="card pad" style={{ marginBottom: 22 }}>
+        <div className="card pad light" style={{ marginBottom: 22 }}>
           <h3 style={{ marginBottom: 16 }}>{editing ? 'Editar borrador' : 'Nueva factura (borrador)'}</h3>
           <div className="field-row">
             <div className="field">
@@ -325,51 +408,84 @@ export default function Facturas() {
         </div>
       )}
 
-      <div className="tabs">
-        {TABS.map((t) => (
-          <button key={t.key} className={tab === t.key ? 'on' : ''} onClick={() => setTab(t.key)}>{t.label}</button>
-        ))}
+      <div className="invoice-list-pane">
+          <div className="tabs">
+            {TABS.map((t) => (
+              <button key={t.key} className={tab === t.key ? 'on' : ''} onClick={() => { setTab(t.key); setPreviewId(''); }}>{t.label}</button>
+            ))}
+          </div>
+
+          <div className="card light table-card">
+            <table className="list invoice-summary-table">
+              <thead>
+                <tr>
+                  <th>Nº</th><th>Cliente</th><th>Fecha</th><th className="num">Total</th><th>Estado</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((inv) => (
+                  <tr key={inv._id} className={preview?._id === inv._id ? 'selected' : ''}>
+                    <td>{inv.number ? `Nº ${inv.number}` : '—'}</td>
+                    <td>{inv.clientSnapshot?.name || inv.client?.name}</td>
+                    <td>{fecha(inv.issueDate || inv.createdAt)}</td>
+                    <td className="num">{euros(inv.total)}</td>
+                    <td><span className={`chip ${inv.status}`}>{inv.status}</span></td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="btn ghost small" onClick={() => setPreviewId((current) => (current === inv._id ? '' : inv._id))}>
+                          {preview?._id === inv._id ? 'Cerrar' : 'Ver'}
+                        </button>
+                        <a className="btn ghost small" href={`/api/invoices/${inv._id}/pdf`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>PDF</a>
+                        {inv.status === 'borrador' && (
+                          <>
+                            <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); openEdit(inv); }}>Editar</button>
+                            <button className="btn terra small" onClick={(e) => { e.stopPropagation(); emit(inv); }}>Emitir</button>
+                            <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); remove(inv); }}>×</button>
+                          </>
+                        )}
+                        {inv.status === 'enviada' && (
+                          <button className="btn paid small" onClick={(e) => { e.stopPropagation(); markPaid(inv); }}>Cobrada ✓</button>
+                        )}
+                        <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); saveAsRecurring(inv); }} title="Guardar como recurrente">⟳</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr><td colSpan={6}><div className="empty"><span className="big">𓂃</span>Sin facturas aquí todavía</div></td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
       </div>
 
-      <div className="card">
-        <table className="list">
-          <thead>
-            <tr>
-              <th>Nº</th><th>Cliente</th><th>Fecha</th><th className="num">Total</th><th>Estado</th><th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((inv) => (
-              <tr key={inv._id}>
-                <td>{inv.number ? `Nº ${inv.number}` : '—'}</td>
-                <td>{inv.clientSnapshot?.name || inv.client?.name}</td>
-                <td>{fecha(inv.issueDate || inv.createdAt)}</td>
-                <td className="num">{euros(inv.total)}</td>
-                <td><span className={`chip ${inv.status}`}>{inv.status}</span></td>
-                <td>
-                  <div className="row-actions">
-                    <a className="btn ghost small" href={`/api/invoices/${inv._id}/pdf`} target="_blank" rel="noreferrer">PDF</a>
-                    {inv.status === 'borrador' && (
-                      <>
-                        <button className="btn ghost small" onClick={() => openEdit(inv)}>Editar</button>
-                        <button className="btn terra small" onClick={() => emit(inv)}>Emitir</button>
-                        <button className="btn ghost small" onClick={() => remove(inv)}>×</button>
-                      </>
-                    )}
-                    {inv.status === 'enviada' && (
-                      <button className="btn small" onClick={() => markPaid(inv)}>Cobrada ✓</button>
-                    )}
-                    <button className="btn ghost small" onClick={() => saveAsRecurring(inv)} title="Guardar como recurrente">⟳</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {visible.length === 0 && (
-              <tr><td colSpan={6}><div className="empty"><span className="big">𓂃</span>Sin facturas aquí todavía</div></td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {preview && (
+        <section className="invoice-preview card light">
+              <div className="preview-head">
+                <div>
+                  <div className="preview-kicker">{preview.number ? `Nº ${preview.number}` : 'Borrador'}</div>
+                  <h2>{invoiceClient(preview).name || 'Factura'}</h2>
+                </div>
+                <span className={`invoice-state ${preview.status}`}>{preview.status}</span>
+              </div>
+              <div className="preview-actions">
+                <a className="btn ghost small" href={`/api/invoices/${preview._id}/pdf`} target="_blank" rel="noreferrer">PDF</a>
+                {preview.status === 'borrador' && (
+                  <>
+                    <button className="btn ghost small" onClick={() => openEdit(preview)}>Editar</button>
+                    <button className="btn terra small" onClick={() => emit(preview)}>Emitir</button>
+                  </>
+                )}
+                {preview.status === 'enviada' && (
+                  <button className="btn paid small" onClick={() => markPaid(preview)}>Cobrada ✓</button>
+                )}
+                <button className="btn ghost small" onClick={() => setPreviewId('')}>Cerrar</button>
+              </div>
+              <div className="pdf-frame-shell">
+                <InvoicePaper invoice={preview} settings={settings} />
+              </div>
+        </section>
+      )}
     </div>
   );
 }

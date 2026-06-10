@@ -47,7 +47,7 @@ export default function Gym() {
       {error && <div className="error-msg">{error}</div>}
 
       {show && (
-        <div className="card pad" style={{ marginBottom: 22 }}>
+        <div className="card pad light" style={{ marginBottom: 22 }}>
           <div className="field-row">
             <div className="field" style={{ maxWidth: 180 }}>
               <label>Fecha</label>

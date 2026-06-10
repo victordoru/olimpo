@@ -56,10 +56,9 @@ export default function Notas() {
       {error && <div className="error-msg">{error}</div>}
 
       <div className="notes-layout">
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: 12, borderBottom: '1px solid var(--line)' }}>
+        <div className="card light" style={{ overflow: 'hidden' }}>
+          <div className="note-search">
             <input
-              style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 8, padding: '7px 10px' }}
               placeholder="Buscar…"
               value={q}
               onChange={(e) => { setQ(e.target.value); load(e.target.value); }}
@@ -76,7 +75,7 @@ export default function Notas() {
           </div>
         </div>
 
-        <div className="card pad">
+        <div className="card pad light">
           <div className="field">
             <label>Título</label>
             <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />

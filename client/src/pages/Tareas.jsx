@@ -111,7 +111,7 @@ export default function Tareas() {
 
       <div className="tasks-layout">
         {/* raíl de proyectos */}
-        <div className="card projects-rail">
+        <div className="card light projects-rail">
           <button className={`proj-link ${sel === 'all' ? 'on' : ''}`} onClick={() => setSel('all')}>
             <span className="dot" style={{ background: 'var(--ink)' }} />
             <span className="name">Todas</span>
@@ -158,7 +158,7 @@ export default function Tareas() {
 
         {/* tareas agrupadas por estado */}
         <div>
-          <form className="card quick-add" onSubmit={add}>
+          <form className="card light quick-add" onSubmit={add}>
             <input
               className="grow"
               placeholder={currentProject ? `Nueva tarea en ${currentProject.name}…` : '¿Qué hay que hacer?'}
@@ -182,7 +182,7 @@ export default function Tareas() {
                   {STATUS_LABEL[status]}
                   <span className="count">{grouped[status].length}</span>
                 </div>
-                <div className="card">
+                <div className={`card ${status === 'en_curso' ? 'light' : ''}`}>
                   {grouped[status].map((t) => (
                     <div key={t._id} className={`task-row ${status === 'hecha' ? 'done' : ''}`}>
                       <StatusIcon status={t.status} onClick={() => cycle(t)} />
@@ -209,7 +209,7 @@ export default function Tareas() {
           )}
 
           {tasks.length === 0 && (
-            <div className="card"><div className="empty"><span className="big">✓</span>Nada por aquí. Añade la primera tarea.</div></div>
+            <div className="card light"><div className="empty"><span className="big">✓</span>Nada por aquí. Añade la primera tarea.</div></div>
           )}
         </div>
       </div>
