@@ -22,6 +22,8 @@ const invoiceSchema = new mongoose.Schema(
     // Copia de los datos del cliente en el momento de emitir,
     // para que la factura no cambie si luego editas el cliente.
     clientSnapshot: { type: Object, default: null },
+    // Línea bajo la fecha: "Servicios correspondientes al mes de abril de 2026".
+    subject: { type: String, default: '' },
     items: { type: [itemSchema], validate: (v) => v.length > 0 },
     ivaPct: { type: Number, default: 21 },
     irpfPct: { type: Number, default: 7 },

@@ -56,6 +56,7 @@ function renderHtml(invoice, settings) {
     BUSINESS_CONTACT: [settings.email, settings.phone].filter(Boolean).map(esc).join(' · '),
     INVOICE_TITLE: isDraft ? 'BORRADOR' : `Factura Nº ${invoice.number}`,
     ISSUE_DATE: fecha(invoice.issueDate || new Date()),
+    SUBJECT: invoice.subject ? `<div class="subject">${esc(invoice.subject)}</div>` : '',
     CLIENT_NAME: esc(client.name || ''),
     CLIENT_NIF: client.nif ? `NIF: ${esc(client.nif)}` : '',
     CLIENT_ADDRESS: clientAddress,
@@ -67,7 +68,7 @@ function renderHtml(invoice, settings) {
     IRPF: euros(invoice.irpf),
     TOTAL: euros(invoice.total),
     IBAN: esc(settings.iban || ''),
-    NOTES: esc(invoice.notes || ''),
+    NOTES: [invoice.notes, settings.invoiceNote].filter(Boolean).map(esc).join('<br>'),
   };
 
   let html = fs.readFileSync(TEMPLATE_PATH, 'utf8');

@@ -28,6 +28,7 @@
   .invoice-meta { text-align: right; }
   .invoice-meta .number { font-size: 18px; font-weight: 700; }
   .invoice-meta p { color: #555; margin-top: 4px; }
+  .subject { font-style: italic; color: #555; margin: -28px 0 36px; }
   .client-box { margin-bottom: 40px; }
   .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #888; margin-bottom: 6px; }
   .client-box .name { font-weight: 600; font-size: 14px; }
@@ -63,6 +64,8 @@
       <p>Fecha: {{ISSUE_DATE}}</p>
     </div>
   </header>
+
+  {{SUBJECT}}
 
   <div class="client-box">
     <div class="label">Facturar a</div>

@@ -14,13 +14,17 @@ Autenticación: header `Authorization: Bearer <AGENT_API_KEY>` en todas las llam
 
 ## Facturación
 
+- `GET /recurring` → plantillas de factura recurrente (p. ej. la mensualidad del Teatro Soho).
+- `POST /recurring/:id/generate` → crea el borrador del periodo. Body opcional `{ "month": 5, "year": 2026 }`; sin body usa el mes anterior al actual. Los placeholders `{MES}` y `{AÑO}` del asunto y los conceptos se rellenan solos. **Esta es la forma preferida de crear la factura mensual del Teatro.**
+- `POST /recurring` → crea una plantilla nueva (`name`, `clientId`, `items`, `subjectTemplate`, `motivo`).
 - `GET /invoices/summary` → `{ pendienteCobro: { total, facturas }, porAño: [...] }` — cuánto le deben a Victor.
 - `GET /invoices?status=borrador|enviada|cobrada` → lista de facturas.
 - `POST /invoices` → crea borrador.
   ```json
   { "clientId": "<id>", "items": [{ "concept": "Desarrollo web", "quantity": 1, "price": 500 }], "notes": "", "motivo": "Victor pidió factura para X" }
   ```
-  `ivaPct` y `irpfPct` son opcionales (por defecto 21 y 7). Si no sabes el `clientId`, haz `GET /clients` primero; el error de cliente desconocido también lista los disponibles.
+  `ivaPct` y `irpfPct` son opcionales (por defecto 21 y 7). `subject` (opcional) es la línea bajo la fecha, p. ej. "Servicios correspondientes al mes de mayo de 2026". Si no sabes el `clientId`, haz `GET /clients` primero; el error de cliente desconocido también lista los disponibles.
+- `POST /invoices/nl` → `{ "text": "factura para el teatro de 623 € por el vuelo de dron...", "motivo": "..." }` crea un borrador a partir de texto libre (el servidor lo parsea con un LLM). Tú ya eres un LLM: normalmente te saldrá mejor construir el JSON y usar `POST /invoices`; usa esta ruta solo si quieres reenviar texto crudo del usuario.
 - `PATCH /invoices/:id` → edita un borrador (mismos campos).
 - `POST /invoices/:id/emit` → asigna número correlativo, congela la factura y genera el PDF. **Solo con confirmación explícita de Victor.**
 - `POST /invoices/:id/paid` → marca cobrada. Body opcional: `{ "paidDate": "2026-06-01" }`.

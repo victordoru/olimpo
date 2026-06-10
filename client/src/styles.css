@@ -403,6 +403,59 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .note-link .t { font-weight: 600; font-size: 13.5px; }
 .note-link .p { font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
+/* ───────── Facturas: dictado y recurrentes */
+.nl-box { margin-bottom: 22px; }
+.nl-box .label-row {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+.nl-input-row { display: flex; gap: 10px; align-items: stretch; }
+.nl-input-row textarea {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.nl-input-row textarea:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 3px rgba(179, 71, 29, 0.12); }
+.nl-buttons { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.btn.mic.on { background: var(--terra-wash); color: var(--terra-deep); border-color: var(--terra); animation: pulse 1.2s ease infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(179, 71, 29, 0.15); } }
+
+.recurring-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.recurring-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.recurring-chip .gen {
+  border: none;
+  background: none;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.recurring-chip .gen:hover { background: var(--olive-wash); color: var(--olive); }
+.recurring-chip .del {
+  border: none;
+  background: none;
+  padding: 5px 8px 5px 2px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 13px;
+}
+.recurring-chip .del:hover { color: var(--terra); }
+
 /* items de factura */
 .invoice-items-table input { width: 100%; }
 .invoice-totals {

@@ -4,6 +4,7 @@ const AuditLog = require('../models/AuditLog');
 // Todo lo que no esté aquí es de solo lectura para Hermes.
 const AGENT_WRITE_WHITELIST = [
   '/invoices', // crear borradores y editarlos (la ruta valida que sean borradores)
+  '/recurring', // generar la siguiente factura de una plantilla recurrente
   '/tasks',
   '/projects', // crear/editar áreas de tareas (borrar sigue vetado)
   '/notes',

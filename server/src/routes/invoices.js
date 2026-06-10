@@ -6,6 +6,7 @@ const Invoice = require('../models/Invoice');
 const Client = require('../models/Client');
 const Settings = require('../models/Settings');
 const { generateInvoicePdf, STORAGE_DIR } = require('../services/pdf');
+const { parseInvoiceText } = require('../services/nl');
 
 const router = express.Router();
 
@@ -51,6 +52,41 @@ router.get('/summary', async (req, res) => {
   });
 });
 
+// Crear borrador desde texto libre (dictado o escrito).
+router.post('/nl', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ error: 'Falta "text": describe la factura' });
+
+    const clients = await Client.find().select('name');
+    const today = new Date().toISOString().slice(0, 10);
+    const parsed = await parseInvoiceText(text.trim(), clients.map((c) => c.name), today);
+
+    const wanted = (parsed.clientName || '').toLowerCase();
+    const client =
+      clients.find((c) => c.name.toLowerCase() === wanted) ||
+      clients.find((c) => c.name.toLowerCase().includes(wanted) || wanted.includes(c.name.toLowerCase()));
+    if (!client) {
+      return res.status(400).json({
+        error: `No encuentro el cliente "${parsed.clientName}". Clientes: ${clients.map((c) => c.name).join(', ') || 'ninguno'}. Créalo primero.`,
+      });
+    }
+
+    const settings = await Settings.get();
+    const invoice = await Invoice.create({
+      client: client._id,
+      subject: parsed.subject || '',
+      items: parseItems(parsed.items),
+      ivaPct: settings.ivaDefault,
+      irpfPct: settings.irpfDefault,
+      notes: parsed.notes || '',
+    });
+    res.status(201).json(await invoice.populate('client'));
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   const filter = {};
   if (req.query.status) filter.status = req.query.status;
@@ -67,7 +103,7 @@ router.get('/:id', async (req, res) => {
 // Crear borrador.
 router.post('/', async (req, res) => {
   try {
-    const { clientId, items, ivaPct, irpfPct, notes } = req.body;
+    const { clientId, items, ivaPct, irpfPct, notes, subject } = req.body;
     const client = await Client.findById(clientId);
     if (!client) {
       const clients = await Client.find().select('name');
@@ -78,6 +114,7 @@ router.post('/', async (req, res) => {
     const settings = await Settings.get();
     const invoice = await Invoice.create({
       client: client._id,
+      subject: subject || '',
       items: parseItems(items),
       ivaPct: ivaPct ?? settings.ivaDefault,
       irpfPct: irpfPct ?? settings.irpfDefault,
@@ -97,7 +134,8 @@ router.patch('/:id', async (req, res) => {
     if (invoice.status !== 'borrador') {
       return res.status(409).json({ error: `La factura Nº ${invoice.number} ya está emitida y no se puede editar. Crea una rectificativa si hace falta.` });
     }
-    const { clientId, items, ivaPct, irpfPct, notes } = req.body;
+    const { clientId, items, ivaPct, irpfPct, notes, subject } = req.body;
+    if (subject !== undefined) invoice.subject = subject;
     if (clientId) {
       const client = await Client.findById(clientId);
       if (!client) return res.status(400).json({ error: 'Cliente no encontrado' });
