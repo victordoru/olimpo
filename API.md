@@ -49,10 +49,15 @@ estado (`pendiente` → `en_curso` → `hecha`) y prioridad (`baja|media|alta|ur
 
 ## Notas
 
+Las notas son páginas jerárquicas (estilo wiki): `parentId: null` es una página
+raíz; cualquier nota puede tener subpáginas apuntando a su `_id`.
+
+- `GET /notes` → todas las notas (el cliente monta el árbol con `parentId`).
 - `GET /notes?q=palabra` → busca en título y contenido.
 - `GET /notes/:id` → nota completa.
-- `POST /notes` → `{ "title": "", "content": "markdown", "tags": [], "motivo": "..." }`.
-- `PATCH /notes/:id` → edita.
+- `POST /notes` → `{ "title": "", "content": "markdown", "tags": [], "parentId": null, "icon": "", "motivo": "..." }`.
+- `PATCH /notes/:id` → edita (`title`, `content`, `tags`, `parentId`, `icon`, `order`). Rechaza ciclos de `parentId`.
+- `DELETE /notes/:id` → borra la página **y todas sus subpáginas** (solo web, el agente no borra).
 
 ## Gimnasio
 

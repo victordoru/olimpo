@@ -34,7 +34,11 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 
 ## Notas
 
-- Buscar: `GET /notes?q=palabra` · Crear: `POST /notes` con `{"title","content"(markdown),"motivo"}` · Editar: `PATCH /notes/<id>`
+Son páginas jerárquicas estilo wiki: `parentId` apunta a la página madre (`null` = raíz).
+
+- Buscar: `GET /notes?q=palabra` · Todas (con jerarquía): `GET /notes`
+- Crear: `POST /notes` con `{"title","content"(markdown),"parentId"(opcional),"motivo"}`. Si Victor pide guardar algo "dentro de" otra página, resuelve su `_id` primero y úsalo como `parentId`.
+- Editar: `PATCH /notes/<id>` (`title`, `content`, `parentId`). Para añadir contenido sin pisar lo que hay, lee la nota primero y reenvía el `content` completo.
 
 ## Gimnasio
 
