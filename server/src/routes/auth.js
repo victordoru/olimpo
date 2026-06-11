@@ -12,7 +12,9 @@ router.post('/login', (req, res) => {
   res.cookie('session', token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    // Actívalo (COOKIE_SECURE=true) solo si se sirve detrás de HTTPS;
+    // por Tailscale en HTTP plano la cookie Secure nunca llegaría.
+    secure: process.env.COOKIE_SECURE === 'true',
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
   res.json({ ok: true });
