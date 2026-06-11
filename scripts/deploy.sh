@@ -29,6 +29,15 @@ if git diff --name-only "$BEFORE" "$AFTER" | grep -q "^client/"; then
   (cd client && npm run build)
 fi
 
+# Sincroniza la skill de Hermes (hermes/SKILL.md es la fuente de verdad;
+# la clave se inyecta desde server/.env y nunca se commitea).
+if [ -d "$HOME/.hermes" ] && [ -f hermes/SKILL.md ]; then
+  AGENT_KEY=$(grep '^AGENT_API_KEY=' server/.env | cut -d= -f2)
+  mkdir -p "$HOME/.hermes/skills/olimpo"
+  sed "s/__AGENT_API_KEY__/$AGENT_KEY/" hermes/SKILL.md > "$HOME/.hermes/skills/olimpo/SKILL.md"
+  echo "→ skill de Hermes sincronizada"
+fi
+
 pm2 restart olimpo --update-env
 for i in 1 2 3 4 5 6 7 8 9 10; do
   sleep 1

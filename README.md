@@ -26,6 +26,16 @@ npm install
 npm run dev            # http://localhost:5173 (proxy /api → 4000)
 ```
 
+## Desplegar
+
+```bash
+./scripts/push-deploy.sh   # push a GitHub + pull/build/restart en el VPS
+```
+
+El despliegue también sincroniza la skill de Hermes: edita `hermes/SKILL.md`
+en este repo (no el archivo de `~/.hermes/` del servidor) y despliega.
+Si cambias la API, actualiza `API.md` y `hermes/SKILL.md` en el mismo commit.
+
 ## Producción (VPS)
 
 ```bash
