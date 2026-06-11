@@ -9,6 +9,10 @@ const AGENT_WRITE_WHITELIST = [
   '/projects', // crear/editar áreas de tareas (borrar sigue vetado)
   '/notes',
   '/workouts',
+  '/transactions', // apuntar gastos manuales y categorizar movimientos
+  '/categories', // crear/editar categorías de gasto e ingreso
+  '/pending', // crear cobros pendientes (en negro) y marcarlos cobrados
+  // OJO: '/bank' queda FUERA a propósito: conectar el banco es sensible y solo se hace desde la web.
 ];
 
 function agentGuard(req, res, next) {

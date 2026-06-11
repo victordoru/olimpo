@@ -25,6 +25,10 @@ api.use('/projects', require('./routes/projects'));
 api.use('/notes', require('./routes/notes'));
 api.use('/workouts', require('./routes/workouts'));
 api.use('/settings', require('./routes/settings'));
+api.use('/transactions', require('./routes/transactions'));
+api.use('/categories', require('./routes/categories'));
+api.use('/pending', require('./routes/pending'));
+api.use('/bank', require('./routes/bank'));
 app.use('/api', api);
 
 // En producción sirve el frontend compilado.

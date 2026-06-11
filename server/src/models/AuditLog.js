@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // Registro de toda escritura que haga el agente (Hermes) a través de la API.
 const auditLogSchema = new mongoose.Schema(
   {
-    actor: { type: String, enum: ['agent', 'user'], required: true },
+    actor: { type: String, enum: ['agent', 'user', 'reconcile'], required: true },
     method: { type: String, required: true },
     path: { type: String, required: true },
     body: { type: Object, default: null },

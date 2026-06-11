@@ -1,6 +1,6 @@
 ---
 name: olimpo
-description: Gestiona el hub personal de Victor (Olimpo) en este mismo servidor - facturas de autónomo, clientes, tareas por proyectos, notas y entrenos de gimnasio. Usar siempre que Victor pida crear/consultar facturas, apuntar tareas o notas, registrar entrenos, o preguntar cuánto le deben.
+description: Gestiona el hub personal de Victor (Olimpo) en este mismo servidor - facturas de autónomo, clientes, tareas por proyectos, notas, entrenos de gimnasio y finanzas (gastos, categorías y cobros pendientes). Usar siempre que Victor pida crear/consultar facturas, apuntar tareas o notas, registrar entrenos, apuntar un gasto, preguntar en qué gasta, o preguntar cuánto le deben.
 ---
 
 # Olimpo — hub personal de Victor
@@ -11,7 +11,7 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 
 ## Reglas innegociables
 
-1. **GET libre; POST/PATCH solo en** `/invoices`, `/recurring`, `/tasks`, `/projects`, `/notes`, `/workouts`. DELETE está bloqueado para ti.
+1. **GET libre; POST/PATCH solo en** `/invoices`, `/recurring`, `/tasks`, `/projects`, `/notes`, `/workouts`, `/transactions`, `/categories`, `/pending`. DELETE está bloqueado para ti, y `/bank` (conexión bancaria) tampoco lo puedes tocar.
 2. **Toda escritura debe llevar el campo `"motivo"`** en el body (una frase). Sin él, la API la rechaza. Queda auditado.
 3. Las facturas se crean como **borrador** y sin número. NUNCA emitas (`/emit`) sin confirmación explícita de Victor en ese momento: emitir asigna número correlativo fiscal y es irreversible.
 4. Las facturas emitidas son inmutables. Los errores de la API devuelven `{"error": "..."}` con la explicación: léela y corrige.
@@ -39,6 +39,26 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 ## Gimnasio
 
 - `POST /workouts` → `{"date","type","entries":[{"exercise","sets","reps","weight"}],"notes","motivo"}` · Histórico: `GET /workouts`
+
+## Finanzas (gastos, banco y cobros)
+
+Gastos e ingresos de la cuenta, categorizados, y cobros pendientes sin factura
+("en negro"). Signo de `amount`: **negativo = gasto, positivo = ingreso**.
+
+- "¿En qué gasto / cómo voy de finanzas?": `GET /transactions/summary` → `saldo` (último saldo de la cuenta), `proyeccion` (saldo + todo lo pendiente cobrado), ingreso/gasto/neto por mes, gasto por categoría, y pendiente de cobro (facturas + negro).
+- Apuntar un gasto que dicte Victor: `POST /transactions` → `{"date":"YYYY-MM-DD","amount":-49.99,"description":"Suscripción Adobe","motivo":"..."}`. Sin `category` se autocategoriza por reglas. Si el importe es positivo, el servidor intenta conciliarlo con una factura/cobro pendiente (cobro automático si hay match único).
+- **Si Victor te manda el Excel de movimientos de BBVA (por Telegram)**: guárdalo y súbelo TAL CUAL, sin transformarlo:
+  ```bash
+  curl -s -X POST http://localhost:4000/api/transactions/import \
+    -H "Authorization: Bearer __AGENT_API_KEY__" \
+    -H "X-Motivo: Victor envió su extracto de BBVA por Telegram" \
+    -F "file=@/ruta/al/extracto.xlsx"
+  ```
+  (multipart: el motivo va en el header `X-Motivo`). El servidor deduplica (re-subir no duplica), autocategoriza, concilia los ingresos con facturas/cobros pendientes y actualiza el saldo. Resume a Victor la respuesta: `nuevos`, `duplicados`, `conciliados` (¡dile qué facturas se marcaron cobradas!) y `saldo`.
+- Si Victor te dicta varios gastos de golpe: `POST /transactions/bulk` con `{"transactions":[{"date","amount","description"}...],"motivo":"..."}` (idempotente: reintentar no duplica).
+- Listar/buscar: `GET /transactions?kind=gasto|ingreso&category=<id>&q=texto`. Categorías: `GET /categories` (crear con `POST /categories`).
+- Cobros en negro (sin factura): `GET /pending`, `POST /pending` → `{"concept","amount","clientId"(opcional),"expectedDate","motivo"}`, marcar cobrado con `POST /pending/<id>/paid`.
+- Conectar/sincronizar el banco NO es cosa tuya: lo hace Victor desde la web (`/finanzas`). Puedes consultar el estado con `GET /bank/status`.
 
 ## Otros
 

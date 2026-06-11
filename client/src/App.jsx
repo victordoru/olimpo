@@ -8,6 +8,7 @@ import Clientes from './pages/Clientes';
 import Tareas from './pages/Tareas';
 import Notas from './pages/Notas';
 import Gym from './pages/Gym';
+import Finanzas from './pages/Finanzas';
 import Ajustes from './pages/Ajustes';
 
 const NAV = [
@@ -17,7 +18,8 @@ const NAV = [
   { to: '/tareas', glyph: '04', label: 'Tareas' },
   { to: '/notas', glyph: '05', label: 'Notas' },
   { to: '/gym', glyph: '06', label: 'Gym' },
-  { to: '/ajustes', glyph: '07', label: 'Ajustes' },
+  { to: '/finanzas', glyph: '07', label: 'Finanzas' },
+  { to: '/ajustes', glyph: '08', label: 'Ajustes' },
 ];
 
 export default function App() {
@@ -59,6 +61,7 @@ export default function App() {
           <Route path="/tareas" element={<Tareas />} />
           <Route path="/notas" element={<Notas />} />
           <Route path="/gym" element={<Gym />} />
+          <Route path="/finanzas" element={<Finanzas />} />
           <Route path="/ajustes" element={<Ajustes />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
