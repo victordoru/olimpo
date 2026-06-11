@@ -30,5 +30,9 @@ if git diff --name-only "$BEFORE" "$AFTER" | grep -q "^client/"; then
 fi
 
 pm2 restart olimpo --update-env
-sleep 2
-curl -sf http://localhost:4000/api/health >/dev/null && echo "✓ API sana tras el despliegue" || { echo "✗ la API no responde, mira: pm2 logs olimpo"; exit 1; }
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  sleep 1
+  curl -sf http://localhost:4000/api/health >/dev/null && { echo "✓ API sana tras el despliegue"; exit 0; }
+done
+echo "✗ la API no responde tras 10s, mira: pm2 logs olimpo"
+exit 1
