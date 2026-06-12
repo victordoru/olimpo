@@ -1,6 +1,7 @@
 const express = require('express');
 const Settings = require('../models/Settings');
 const AuditLog = require('../models/AuditLog');
+const { notify, activeChannel } = require('../services/notify');
 
 const router = express.Router();
 
@@ -22,6 +23,23 @@ router.patch('/', async (req, res) => {
     res.json(settings);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Canal de notificaciones configurado y prueba de envío (solo web).
+router.get('/notify', (req, res) => {
+  res.json({ channel: activeChannel() });
+});
+
+router.post('/notify-test', async (req, res) => {
+  try {
+    const channel = await notify('🔔 Prueba de notificación de Olimpo. Si lees esto, los recordatorios funcionan.');
+    if (channel === 'console') {
+      return res.status(400).json({ error: 'Ningún canal configurado: añade las variables de WhatsApp/Telegram al .env del servidor.' });
+    }
+    res.json({ ok: true, channel });
+  } catch (err) {
+    res.status(502).json({ error: `El envío falló: ${err.message}` });
   }
 });
 

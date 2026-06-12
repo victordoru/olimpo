@@ -1,6 +1,6 @@
 ---
 name: olimpo
-description: Gestiona el hub personal de Victor (Olimpo) en este mismo servidor - facturas de autónomo, clientes, tareas por proyectos, notas, entrenos de gimnasio y finanzas (gastos, categorías y cobros pendientes). Usar siempre que Victor pida crear/consultar facturas, apuntar tareas o notas, registrar entrenos, apuntar un gasto, preguntar en qué gasta, o preguntar cuánto le deben.
+description: Gestiona el hub personal de Victor (Olimpo) en este mismo servidor - facturas de autónomo, clientes, tareas por proyectos con recordatorios, notas, entrenos de gimnasio y finanzas (gastos, categorías y cobros pendientes). Usar siempre que Victor pida crear/consultar facturas, apuntar tareas o notas, pedir que se le recuerde o avise de algo ("recuérdame...", "avísame..."), registrar entrenos, apuntar un gasto, preguntar en qué gasta, o preguntar cuánto le deben.
 ---
 
 # Olimpo — hub personal de Victor
@@ -29,8 +29,10 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 ## Tareas y proyectos
 
 - `GET /tasks?when=today|pending&project=<id>` — "today" para el repaso matinal.
-- `POST /tasks` → `{"text","due":"YYYY-MM-DD","priority":"baja|media|alta|urgente","project":"<id>","motivo"}` (todo opcional salvo text). `GET /projects` para resolver nombres de áreas; puedes crear áreas con POST /projects.
-- Completar: `PATCH /tasks/<id>` con `{"status":"hecha","motivo"}` (estados: pendiente, en_curso, hecha).
+- `POST /tasks` → `{"text","due","priority":"baja|media|alta|urgente","project":"<id>","reminders":["..."],"motivo"}` (todo opcional salvo text). `due` acepta `"2026-06-15"` (todo el día) o `"2026-06-15T17:30"` (con hora). `GET /projects` para resolver nombres de áreas; puedes crear áreas con POST /projects.
+- **Recordatorios al móvil de Victor**: si Victor pide "recuérdame X" o "avísame", crea la tarea con `reminders`: array de fechas ISO absolutas (hora de Madrid). El SERVIDOR envía el aviso por WhatsApp/Telegram al llegar el momento — tú no tienes que hacer nada más ni estar despierto. Ej.: "recuérdame mañana a las 10 llamar al gestor" → `{"text":"Llamar al gestor","due":"2026-06-13T10:00","reminders":["2026-06-13T10:00"],"motivo":"..."}`. Calcula las fechas relativas ("en 2 horas", "el viernes") respecto a la hora actual.
+- Para cambiar o quitar avisos: `PATCH /tasks/<id>` con `reminders` (reemplaza la lista; `[]` los quita).
+- Completar: `PATCH /tasks/<id>` con `{"status":"hecha","motivo"}` (estados: pendiente, en_curso, hecha). Una tarea hecha ya no dispara sus recordatorios.
 
 ## Notas
 

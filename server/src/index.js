@@ -45,8 +45,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
+const { startReminderScheduler } = require('./services/reminderScheduler');
 connectDB()
-  .then(() => app.listen(PORT, () => console.log(`[api] escuchando en http://localhost:${PORT}`)))
+  .then(() => {
+    startReminderScheduler();
+    app.listen(PORT, () => console.log(`[api] escuchando en http://localhost:${PORT}`));
+  })
   .catch((err) => {
     console.error('[db] no se pudo conectar a MongoDB:', err.message);
     process.exit(1);

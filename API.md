@@ -40,12 +40,37 @@ Autenticación: header `Authorization: Bearer <AGENT_API_KEY>` en todas las llam
 
 Las tareas se organizan en proyectos (áreas de vida: trabajo, casa, salud…) y tienen
 estado (`pendiente` → `en_curso` → `hecha`) y prioridad (`baja|media|alta|urgente`).
+La fecha es opcional y puede llevar hora; los recordatorios los envía el propio
+servidor por WhatsApp/Telegram (según el canal configurado en el `.env`) cuando vencen.
 
 - `GET /projects` → áreas con su recuento de tareas sin terminar (úsalo para resolver nombre → id).
 - `POST /projects` → `{ "name": "Salud", "color": "#5f6b3c", "motivo": "..." }`.
 - `GET /tasks?when=today|pending|all&project=<id|none>&status=<estado>` → filtros combinables. `today` = sin terminar que vencen hoy (úsalo para el resumen matinal).
-- `POST /tasks` → `{ "text": "Llamar al gestor", "due": "2026-06-12", "project": "<id>", "priority": "alta", "motivo": "..." }` (todo opcional salvo `text`).
-- `PATCH /tasks/:id` → cambia `status`, `text`, `due`, `priority` o `project`. `{ "done": true }` también vale como atajo de `status: "hecha"`.
+- `POST /tasks` →
+  ```json
+  {
+    "text": "Llamar al gestor",
+    "due": "2026-06-12T17:30",
+    "reminders": ["2026-06-12T17:00"],
+    "project": "<id>",
+    "priority": "alta",
+    "motivo": "..."
+  }
+  ```
+  Todo opcional salvo `text`. `due` acepta solo fecha (`"2026-06-12"` = todo el día)
+  o fecha+hora ISO; `hasTime` se deduce de la presencia de hora (o pásalo explícito).
+  `reminders` es un array de fechas ISO absolutas: cada una dispara UN aviso al móvil
+  de Victor cuando llega su momento (se ignoran si la tarea ya está hecha).
+- `PATCH /tasks/:id` → cambia `status`, `text`, `due`, `hasTime`, `reminders`,
+  `priority` o `project`. `reminders` reemplaza la lista completa (los ya enviados
+  con la misma fecha conservan su estado); `[]` los quita. `{ "done": true }`
+  también vale como atajo de `status: "hecha"`.
+- Cada recordatorio guarda `sentAt` (cuándo se envió) y `error` (si el envío falló).
+
+### Notificaciones (solo web)
+
+- `GET /settings/notify` → `{ "channel": "whatsapp|callmebot|telegram|null" }` — canal activo.
+- `POST /settings/notify-test` → envía un mensaje de prueba por el canal activo.
 
 ## Notas
 

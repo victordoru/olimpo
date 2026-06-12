@@ -27,6 +27,18 @@ router.get('/', async (req, res) => {
   res.json(await Task.find(filter).populate('project', 'name color').sort({ due: 1, createdAt: 1 }));
 });
 
+// reminders llega como array de fechas ISO; lo normalizamos al subdocumento.
+// Se conserva el estado de envío de los recordatorios que no cambian.
+function buildReminders(input, existing = []) {
+  if (!Array.isArray(input)) throw new Error('"reminders" debe ser un array de fechas ISO');
+  return input.map((value) => {
+    const at = new Date(value);
+    if (isNaN(at)) throw new Error(`Fecha de recordatorio inválida: ${value}`);
+    const prev = existing.find((r) => r.at?.getTime() === at.getTime());
+    return prev || { at, sentAt: null, error: '' };
+  });
+}
+
 async function resolveProject(projectId) {
   if (projectId === undefined) return undefined;
   if (!projectId) return null;
@@ -40,11 +52,14 @@ async function resolveProject(projectId) {
 
 router.post('/', async (req, res) => {
   try {
-    const { text, due, priority, status, project } = req.body;
+    const { text, due, priority, status, project, hasTime, reminders } = req.body;
     if (!text) return res.status(400).json({ error: 'Falta "text": qué hay que hacer' });
     const task = await Task.create({
       text,
       due: due ? new Date(due) : null,
+      // due con hora explícita ("2026-06-12T17:30") marca hasTime salvo que venga dado.
+      hasTime: hasTime ?? (typeof due === 'string' && due.includes('T')),
+      reminders: reminders ? buildReminders(reminders) : [],
       priority: priority || '',
       status: status || 'pendiente',
       project: (await resolveProject(project)) ?? null,
@@ -60,7 +75,16 @@ router.patch('/:id', async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
     if (req.body.text !== undefined) task.text = req.body.text;
-    if (req.body.due !== undefined) task.due = req.body.due ? new Date(req.body.due) : null;
+    if (req.body.due !== undefined) {
+      task.due = req.body.due ? new Date(req.body.due) : null;
+      if (req.body.hasTime === undefined) {
+        task.hasTime = typeof req.body.due === 'string' && req.body.due.includes('T');
+      }
+    }
+    if (req.body.hasTime !== undefined) task.hasTime = !!req.body.hasTime;
+    if (req.body.reminders !== undefined) {
+      task.reminders = buildReminders(req.body.reminders || [], task.reminders);
+    }
     if (req.body.priority !== undefined) task.priority = req.body.priority;
     if (req.body.project !== undefined) task.project = await resolveProject(req.body.project);
     // Compatibilidad: done:true equivale a status:'hecha'.

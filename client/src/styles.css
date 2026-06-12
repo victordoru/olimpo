@@ -1284,3 +1284,62 @@ select, input[type='date'] { color-scheme: dark; }
   .fin-filters input { flex: 1 1 100%; }
   .fin-txns .cat-select { max-width: 130px; }
 }
+
+/* ---- Tareas: fecha/hora, recordatorios y editor inline ---- */
+.task-row .due {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.task-row .due:hover { color: var(--ink); background: var(--bone-deep); }
+.task-row .due.overdue { color: #ff5a3c; font-weight: 600; }
+.task-row .due.empty { opacity: 0; }
+.task-row:hover .due.empty { opacity: 1; }
+.card.light .task-row .due:hover { color: #0a0a0a; background: #d6d5cf; }
+.card.light .task-row .due.overdue { color: #c2330f; }
+
+.task-row .bell { color: var(--terra); flex-shrink: 0; }
+.card.light .task-row .bell { color: #169607; }
+
+.due-editor {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 14px 10px 40px;
+  border-bottom: 1px solid var(--line);
+}
+.due-editor input, .due-editor select {
+  border: 1px solid var(--line-strong);
+  padding: 5px 8px;
+  background: #0a0a0a;
+  color: var(--ink);
+  color-scheme: dark;
+  font-size: 12px;
+}
+.card.light .due-editor { border-color: #d6d5cf; }
+.card.light .due-editor input, .card.light .due-editor select {
+  background: #fffdf8;
+  color: #0a0a0a;
+  border-color: #c2c1ba;
+  color-scheme: light;
+}
+.due-editor .quick-chips { display: flex; gap: 6px; }
+.due-editor .quick-chips button {
+  border: 1px solid var(--line-strong);
+  background: none;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.due-editor .quick-chips button:hover { border-color: var(--terra); color: var(--terra); }
+.card.light .due-editor .quick-chips button { border-color: #c2c1ba; color: #4a4a45; }
+.card.light .due-editor .quick-chips button:hover { border-color: #169607; color: #0f6d04; }
