@@ -39,8 +39,9 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 Son páginas jerárquicas estilo wiki: `parentId` apunta a la página madre (`null` = raíz).
 
 - Buscar: `GET /notes?q=palabra` · Todas (con jerarquía): `GET /notes`
-- Crear: `POST /notes` con `{"title","content"(markdown),"parentId"(opcional),"motivo"}`. Si Victor pide guardar algo "dentro de" otra página, resuelve su `_id` primero y úsalo como `parentId`.
-- Editar: `PATCH /notes/<id>` (`title`, `content`, `parentId`). Para añadir contenido sin pisar lo que hay, lee la nota primero y reenvía el `content` completo.
+- Crear: `POST /notes` con `{"title","content"(markdown),"parentId"(opcional),"icon"(un emoji, opcional),"motivo"}`. Si Victor pide guardar algo "dentro de" otra página, resuelve su `_id` primero y úsalo como `parentId`.
+- Editar: `PATCH /notes/<id>` (`title`, `content`, `parentId`, `icon`). Para añadir contenido sin pisar lo que hay, lee la nota primero y reenvía el `content` completo.
+- **Formato del content**: Markdown GFM normal (tablas, checkboxes `- [ ]`, tachado) con tres particularidades de Olimpo: (1) para enlazar a OTRA nota usa `[[Título exacto]]` — wikilink propio; si la nota no existe, el enlace la crea al clicarla; (2) los saltos de línea simples se renderizan (breaks activado): no metas saltos decorativos dentro de los párrafos; (3) el código SIEMPRE en bloques ``` con el lenguaje (```js, ```bash…) — así sale con resaltado y botón de copiar. No hay mermaid, fórmulas ni notas al pie. En el hub existe la nota "Guía de Markdown" como chuleta completa.
 
 ## Gimnasio
 

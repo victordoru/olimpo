@@ -77,6 +77,12 @@ servidor por WhatsApp/Telegram (según el canal configurado en el `.env`) cuando
 Las notas son páginas jerárquicas (estilo wiki): `parentId: null` es una página
 raíz; cualquier nota puede tener subpáginas apuntando a su `_id`.
 
+El `content` es Markdown GFM con extras propios del visor de Olimpo:
+`[[Título]]` enlaza a otra nota por título exacto (si no existe, el clic la crea
+como subpágina); los saltos de línea simples se renderizan (`breaks: true`); los
+bloques de código con lenguaje (```js…) llevan resaltado y botón de copiar.
+Sin mermaid, fórmulas ni notas al pie.
+
 - `GET /notes` → todas las notas (el cliente monta el árbol con `parentId`).
 - `GET /notes?q=palabra` → busca en título y contenido.
 - `GET /notes/:id` → nota completa.
