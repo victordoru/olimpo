@@ -77,6 +77,11 @@ export default function Finanzas() {
 
   // Filtros de movimientos
   const [filters, setFilters] = useState({ kind: '', category: '', q: '' });
+  // Periodo: presets de mes / año / rango libre
+  const [period, setPeriod] = useState({ preset: 'mes', from: '', to: '' });
+  // Modo calculadora: seleccionar movimientos y sumar sobre la marcha
+  const [calc, setCalc] = useState(false);
+  const [calcSel, setCalcSel] = useState(() => new Set());
 
   // Formularios
   const [txForm, setTxForm] = useState(null); // { date, amount, description, counterparty, category }
@@ -94,12 +99,43 @@ export default function Finanzas() {
     });
   };
 
+  // Rango de fechas que sale del preset elegido
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const isoDay = (y, m, d) => `${y}-${pad2(m)}-${pad2(d)}`;
+  const lastDay = (y, m) => new Date(y, m, 0).getDate();
+  const periodRange = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1;
+    if (period.preset === 'todo') return {};
+    if (period.preset === 'mes') return { from: isoDay(y, m, 1), to: isoDay(y, m, lastDay(y, m)) };
+    if (period.preset === 'año') return { from: isoDay(y, 1, 1), to: isoDay(y, 12, 31) };
+    if (period.preset === 'custom') return { from: period.from || undefined, to: period.to || undefined };
+    if (period.preset.startsWith('m:')) {
+      const [py, pm] = period.preset.slice(2).split('-').map(Number);
+      return { from: isoDay(py, pm, 1), to: isoDay(py, pm, lastDay(py, pm)) };
+    }
+    return {};
+  }, [period]);
+
+  // Últimos 12 meses para el selector
+  const mesesOpts = useMemo(() => {
+    const out = [];
+    const now = new Date();
+    for (let i = 1; i <= 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      out.push({ value: `m:${d.getFullYear()}-${d.getMonth() + 1}`, label: `${MESES[d.getMonth()]} ${d.getFullYear()}` });
+    }
+    return out;
+  }, []);
+
   const loadSummary = () => api.get('/transactions/summary').then(setSummary).catch((e) => setError(e.message));
   const loadTxns = () => {
     const qs = new URLSearchParams();
     if (filters.kind) qs.set('kind', filters.kind);
     if (filters.category) qs.set('category', filters.category);
     if (filters.q) qs.set('q', filters.q);
+    if (periodRange.from) qs.set('from', periodRange.from);
+    if (periodRange.to) qs.set('to', `${periodRange.to}T23:59:59`);
     return api.get(`/transactions${qs.toString() ? `?${qs}` : ''}`).then(setTxns).catch((e) => setError(e.message));
   };
   const loadPending = () => api.get('/pending').then(setPending).catch(() => {});
@@ -114,7 +150,39 @@ export default function Finanzas() {
     loadInvoicesPend();
   }, []);
 
-  useEffect(() => { if (sub === 'movimientos') loadTxns(); }, [sub, filters]);
+  useEffect(() => { if (sub === 'movimientos') loadTxns(); }, [sub, filters, periodRange]);
+
+  // Totales del periodo visible (sin contar ignorados)
+  const periodTotals = useMemo(() => {
+    let ingreso = 0, gasto = 0;
+    for (const t of txns) {
+      if (t.ignored) continue;
+      if (t.amount >= 0) ingreso += t.amount;
+      else gasto += -t.amount;
+    }
+    return { ingreso, gasto, neto: ingreso - gasto };
+  }, [txns]);
+
+  // Totales de la calculadora (solo lo seleccionado)
+  const calcTotals = useMemo(() => {
+    let ingreso = 0, gasto = 0, n = 0;
+    for (const t of txns) {
+      if (!calcSel.has(t._id)) continue;
+      n += 1;
+      if (t.amount >= 0) ingreso += t.amount;
+      else gasto += -t.amount;
+    }
+    return { ingreso, gasto, neto: ingreso - gasto, n };
+  }, [txns, calcSel]);
+
+  const toggleCalcSel = (id) =>
+    setCalcSel((s) => {
+      const next = new Set(s);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const exitCalc = () => { setCalc(false); setCalcSel(new Set()); };
 
   // ───────── Derivados del resumen
   const ahora = new Date();
@@ -355,8 +423,8 @@ export default function Finanzas() {
                 {(summary?.porMes || []).slice().reverse().map((m) => (
                   <tr key={`${m.año}-${m.mes}`}>
                     <td>{MESES[m.mes - 1]} {m.año}</td>
-                    <td className="num">{money(m.ingreso)}</td>
-                    <td className="num">{money(m.gasto)}</td>
+                    <td className="num" style={{ color: '#169607' }}>{money(m.ingreso)}</td>
+                    <td className="num" style={{ color: '#bd1f1f' }}>{money(m.gasto)}</td>
                     <td className="num" style={{ color: m.neto >= 0 ? '#169607' : '#bd1f1f' }}>{money(m.neto)}</td>
                   </tr>
                 ))}
@@ -397,6 +465,19 @@ export default function Finanzas() {
           </div>
 
           <div className="card pad light fin-filters">
+            <select value={period.preset} onChange={(e) => setPeriod({ ...period, preset: e.target.value })}>
+              <option value="mes">Este mes</option>
+              {mesesOpts.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              <option value="año">Este año</option>
+              <option value="todo">Todo</option>
+              <option value="custom">Rango personalizado…</option>
+            </select>
+            {period.preset === 'custom' && (
+              <>
+                <input type="date" value={period.from} onChange={(e) => setPeriod({ ...period, from: e.target.value })} title="Desde" />
+                <input type="date" value={period.to} onChange={(e) => setPeriod({ ...period, to: e.target.value })} title="Hasta" />
+              </>
+            )}
             <select value={filters.kind} onChange={(e) => setFilters({ ...filters, kind: e.target.value })}>
               <option value="">Todo</option>
               <option value="gasto">Gastos</option>
@@ -408,6 +489,24 @@ export default function Finanzas() {
             </select>
             <input placeholder="Buscar concepto…" value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} />
             <button className="btn ghost small" onClick={() => setShowCats((v) => !v)}>{showCats ? 'Ocultar categorías' : 'Categorías'}</button>
+            <button
+              className={`btn small ${calc ? 'terra' : 'ghost'}`}
+              onClick={() => (calc ? exitCalc() : setCalc(true))}
+              title="Selecciona movimientos y suma el total"
+            >
+              Σ Calculadora
+            </button>
+          </div>
+
+          <div className="period-strip">
+            <span className="p-label">
+              {period.preset === 'todo'
+                ? 'Todo el histórico'
+                : `${periodRange.from ? fecha(periodRange.from) : 'inicio'} → ${periodRange.to ? fecha(periodRange.to) : 'hoy'}`}
+            </span>
+            <span className="p-in">▲ {money(periodTotals.ingreso)}</span>
+            <span className="p-out">▼ −{money(periodTotals.gasto)}</span>
+            <span className={`p-net ${periodTotals.neto < 0 ? 'neg' : ''}`}>= {money(periodTotals.neto)}</span>
           </div>
 
           {showCats && (
@@ -463,14 +562,24 @@ export default function Finanzas() {
           <div className="card light table-card">
             <table className="list fin-txns">
               <thead>
-                <tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th className="num">Importe</th><th></th></tr>
+                <tr>{calc && <th className="calc-cell">Σ</th>}<th>Fecha</th><th>Concepto</th><th>Categoría</th><th className="num">Importe</th><th></th></tr>
               </thead>
               <tbody>
                 {txns.map((t) => {
                   const reconciled = t.reconciledInvoice || t.reconciledPending;
                   const suggestions = [...(t.suggestedInvoices || []), ...(t.suggestedPendings || [])];
+                  const selected = calc && calcSel.has(t._id);
                   return (
-                    <tr key={t._id} className={t.ignored ? 'tx-ignored' : ''}>
+                    <tr
+                      key={t._id}
+                      className={`${t.ignored ? 'tx-ignored' : ''} ${calc ? 'calc-row' : ''} ${selected ? 'calc-sel' : ''}`}
+                      onClick={(e) => {
+                        if (!calc) return;
+                        if (e.target.closest('button, select, input, a')) return;
+                        toggleCalcSel(t._id);
+                      }}
+                    >
+                      {calc && <td className="calc-cell"><span className={`calc-box ${selected ? 'on' : ''}`}>{selected ? '▣' : '□'}</span></td>}
                       <td className="num">{fecha(t.date)}</td>
                       <td>
                         <div className="tx-desc">{t.description || '(sin concepto)'}</div>
@@ -501,7 +610,7 @@ export default function Finanzas() {
                           ))}
                         </select>
                       </td>
-                      <td className={`num tx-amount ${t.amount < 0 ? 'neg' : 'pos'}`}>{money(t.amount)}</td>
+                      <td className={`num tx-amount ${t.amount < 0 ? 'neg' : 'pos'}`}>{t.amount > 0 ? '+' : ''}{money(t.amount)}</td>
                       <td>
                         <div className="row-actions">
                           <button className="btn ghost small" onClick={() => toggleIgnore(t)} title="Ignorar en estadísticas">{t.ignored ? 'incluir' : 'ignorar'}</button>
@@ -511,10 +620,21 @@ export default function Finanzas() {
                     </tr>
                   );
                 })}
-                {txns.length === 0 && <tr><td colSpan={5}><div className="empty">Sin movimientos. Añade uno o conecta el banco.</div></td></tr>}
+                {txns.length === 0 && <tr><td colSpan={calc ? 6 : 5}><div className="empty">Sin movimientos en este periodo.</div></td></tr>}
               </tbody>
             </table>
           </div>
+
+          {calc && (
+            <div className="calc-bar">
+              <span className="c-n">{calcTotals.n} mov.</span>
+              <span className="c-in">+{money(calcTotals.ingreso)}</span>
+              <span className="c-out">−{money(calcTotals.gasto)}</span>
+              <span className={`c-tot ${calcTotals.neto < 0 ? 'neg' : ''}`}>TOTAL {money(calcTotals.neto)}</span>
+              <button className="c-clear" onClick={() => setCalcSel(new Set())} disabled={calcTotals.n === 0}>limpiar</button>
+              <button className="c-close" onClick={exitCalc} title="Salir de la calculadora">×</button>
+            </div>
+          )}
         </>
       )}
 

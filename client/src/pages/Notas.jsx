@@ -9,6 +9,23 @@ const escapeHtml = (s) =>
 marked.use({
   gfm: true,
   breaks: true,
+  // [[Título]] → enlace interno; si la página no existe, el clic la crea
+  // como subpágina de la nota actual.
+  extensions: [
+    {
+      name: 'wikilink',
+      level: 'inline',
+      start(src) { return src.indexOf('[['); },
+      tokenizer(src) {
+        const m = /^\[\[([^[\]\n]+)\]\]/.exec(src);
+        if (m) return { type: 'wikilink', raw: m[0], title: m[1].trim() };
+      },
+      renderer(token) {
+        const t = escapeHtml(token.title);
+        return `<a class="wikilink" data-wiki="${t}">${t}</a>`;
+      },
+    },
+  ],
   renderer: {
     code({ text, lang }) {
       const language = (lang || '').trim().split(/\s+/)[0].toLowerCase();
@@ -250,7 +267,47 @@ export default function Notas() {
     [mode, draft]
   );
 
+  // Resuelve un [[wikilink]]: primero entre las hijas de la nota actual,
+  // después en todo el árbol (por título, sin distinguir mayúsculas).
+  const resolveWiki = (title) => {
+    const t = title.trim().toLowerCase();
+    const match = (n) => (n.title || '').trim().toLowerCase() === t;
+    const kids = selectedId ? childrenOf.get(String(selectedId)) || [] : [];
+    return kids.find(match) || notes.find(match) || null;
+  };
+
+  const openWiki = async (title) => {
+    const existing = resolveWiki(title);
+    if (existing) { select(existing._id); return; }
+    if (dirtyRef.current) await doSave();
+    try {
+      const created = await api.post('/notes', { title: title.trim(), content: '', parentId: selectedId });
+      setNotes((ns) => [...ns, created]);
+      if (selectedId) setExpanded((s) => new Set([...s, String(selectedId)]));
+      // byId aún no incluye la nota recién creada: se selecciona a mano.
+      selectedRef.current = created._id;
+      setSelectedId(created._id);
+      const d = { title: created.title, content: '', icon: created.icon || '' };
+      draftRef.current = d;
+      setDraft(d);
+      dirtyRef.current = false;
+      setSaveState('saved');
+      setMode('edit');
+    } catch (e) { setError(e.message); }
+  };
+
+  // Marca en gris los wikilinks que aún no existen (el clic los crea).
+  const mdRef = useRef(null);
+  useEffect(() => {
+    if (!mdRef.current) return;
+    for (const a of mdRef.current.querySelectorAll('a.wikilink')) {
+      a.classList.toggle('missing', !resolveWiki(a.dataset.wiki || ''));
+    }
+  });
+
   const onBodyClick = (e) => {
+    const wiki = e.target.closest('a.wikilink');
+    if (wiki) { openWiki(wiki.dataset.wiki || ''); return; }
     const btn = e.target.closest('.code-copy');
     if (!btn) return;
     const code = btn.closest('.codeblock')?.querySelector('code');
@@ -375,16 +432,29 @@ export default function Notas() {
                   ref={editorRef}
                   className="md-editor"
                   value={draft.content}
-                  placeholder={'Markdown. Usa ``` para bloques de código:\n\n```bash\nssh victor@servidor\n```'}
+                  placeholder={'Markdown. Usa ``` para bloques de código y [[Título]] para enlazar (o crear) subpáginas:\n\n```bash\nssh victor@servidor\n```\n\nVer también [[Ideas sueltas]]'}
                   onChange={(e) => edit({ content: e.target.value })}
                 />
               ) : (
                 <div
+                  ref={mdRef}
                   className="md"
                   onClick={onBodyClick}
                   onDoubleClick={() => setMode('edit')}
                   dangerouslySetInnerHTML={{ __html: html || '<p class="md-empty">Página vacía — doble clic para escribir.</p>' }}
                 />
+              )}
+
+              {mode === 'view' && (childrenOf.get(String(selectedId)) || []).length > 0 && (
+                <div className="doc-subpages">
+                  <div className="label">Subpáginas</div>
+                  {(childrenOf.get(String(selectedId)) || []).map((k) => (
+                    <button key={k._id} className="subpage-link" onClick={() => select(k._id)}>
+                      <span className="ico">{k.icon || '▪'}</span>
+                      <span>{k.title || 'Sin título'}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
