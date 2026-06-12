@@ -81,7 +81,9 @@ function DueEditor({ task, onSave, onClose }) {
       ? new Date(task.due).toTimeString().slice(0, 5)
       : ''
   );
-  const [preset, setPreset] = useState('keep');
+  const pendingReminders = task.reminders?.filter((r) => !r.sentAt).length || 0;
+  // Sin avisos previos, "mantener" equivale a ninguno: que el desplegable lo diga.
+  const [preset, setPreset] = useState(pendingReminders ? 'keep' : '');
 
   const save = (overrides = {}) => {
     const d = overrides.date !== undefined ? overrides.date : date;
@@ -109,7 +111,7 @@ function DueEditor({ task, onSave, onClose }) {
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} />
       <select value={preset} onChange={(e) => setPreset(e.target.value)} disabled={!date} title="Aviso por WhatsApp/Telegram">
-        <option value="keep">Aviso: mantener</option>
+        {pendingReminders > 0 && <option value="keep">Mantener aviso actual</option>}
         {REMINDER_PRESETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
       <button type="button" className="btn small" onClick={() => save()}>Guardar</button>
