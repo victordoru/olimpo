@@ -171,6 +171,42 @@ export default function Notas() {
     saveTimer.current = setTimeout(doSave, 900);
   };
 
+  // Sube una imagen y la inserta como markdown en la posición del cursor.
+  const insertImages = async (files) => {
+    const imgs = [...files].filter((f) => f.type.startsWith('image/'));
+    if (!imgs.length) return;
+    const ta = editorRef.current;
+    const at = ta ? ta.selectionStart : (draftRef.current?.content || '').length;
+    const before = (draftRef.current?.content || '').slice(0, at);
+    const after = (draftRef.current?.content || '').slice(at);
+    setError('');
+    try {
+      const urls = [];
+      for (const file of imgs) {
+        const form = new FormData();
+        form.append('image', file);
+        const { url } = await api.post('/notes/upload', form);
+        urls.push(`![${file.name.replace(/\.[^.]+$/, '')}](${url})`);
+      }
+      const insert = urls.join('\n');
+      edit({ content: `${before}${insert}${after}` });
+      // Recoloca el cursor tras lo insertado.
+      requestAnimationFrame(() => {
+        if (ta) { const pos = before.length + insert.length; ta.focus(); ta.setSelectionRange(pos, pos); }
+      });
+    } catch (e) { setError(e.message); }
+  };
+
+  const onEditorPaste = (e) => {
+    const files = [...(e.clipboardData?.files || [])].filter((f) => f.type.startsWith('image/'));
+    if (files.length) { e.preventDefault(); insertImages(files); }
+  };
+
+  const onEditorDrop = (e) => {
+    const files = [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith('image/'));
+    if (files.length) { e.preventDefault(); insertImages(files); }
+  };
+
   const select = (id) => {
     if (dirtyRef.current) doSave();
     const n = byId.get(String(id));
@@ -432,8 +468,11 @@ export default function Notas() {
                   ref={editorRef}
                   className="md-editor"
                   value={draft.content}
-                  placeholder={'Markdown. Usa ``` para bloques de código y [[Título]] para enlazar (o crear) subpáginas:\n\n```bash\nssh victor@servidor\n```\n\nVer también [[Ideas sueltas]]'}
+                  placeholder={'Markdown. Usa ``` para bloques de código y [[Título]] para enlazar (o crear) subpáginas. Pega o arrastra una imagen para incrustarla:\n\n```bash\nssh victor@servidor\n```\n\nVer también [[Ideas sueltas]]'}
                   onChange={(e) => edit({ content: e.target.value })}
+                  onPaste={onEditorPaste}
+                  onDrop={onEditorDrop}
+                  onDragOver={(e) => e.preventDefault()}
                 />
               ) : (
                 <div

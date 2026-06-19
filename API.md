@@ -81,6 +81,8 @@ El `content` es Markdown GFM con extras propios del visor de Olimpo:
 `[[Título]]` enlaza a otra nota por título exacto (si no existe, el clic la crea
 como subpágina); los saltos de línea simples se renderizan (`breaks: true`); los
 bloques de código con lenguaje (```js…) llevan resaltado y botón de copiar.
+Las imágenes se incrustan con la sintaxis Markdown estándar `![alt](url)`; en la
+web se pegan/arrastran sobre el editor y se suben a `/notes/upload`.
 Sin mermaid, fórmulas ni notas al pie.
 
 - `GET /notes` → todas las notas (el cliente monta el árbol con `parentId`).
@@ -88,7 +90,8 @@ Sin mermaid, fórmulas ni notas al pie.
 - `GET /notes/:id` → nota completa.
 - `POST /notes` → `{ "title": "", "content": "markdown", "tags": [], "parentId": null, "icon": "", "motivo": "..." }`.
 - `PATCH /notes/:id` → edita (`title`, `content`, `tags`, `parentId`, `icon`, `order`). Rechaza ciclos de `parentId`.
-- `DELETE /notes/:id` → borra la página **y todas sus subpáginas** (solo web, el agente no borra).
+- `DELETE /notes/:id` → borra la página **y todas sus subpáginas** (y las imágenes que ya no use ninguna nota; solo web, el agente no borra).
+- `POST /notes/upload` → multipart `image` (PNG/JPG/GIF/WEBP, máx 8 MB). Devuelve `{ "url": "/api/notes/uploads/<archivo>" }` para meterlo en el `content` como `![](url)`. Las imágenes se sirven en `GET /notes/uploads/<archivo>`.
 
 ## Gimnasio
 
