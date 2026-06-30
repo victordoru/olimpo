@@ -223,6 +223,8 @@ body[data-page='facturas'] .error-msg { color: #0a0a0a; border-color: #169607; b
 body[data-page='facturas'] .error-msg::before { color: #0f6d04; }
 body[data-page='facturas'] .btn.ghost { color: #4a4a45; border-color: #9a9a94; }
 body[data-page='facturas'] .btn.ghost:hover { background: #e2e1db; color: #0a0a0a; border-color: #0a0a0a; }
+body[data-page='facturas'] .btn.ghost.danger { color: #bd1f1f; border-color: rgba(189, 31, 31, 0.55); }
+body[data-page='facturas'] .btn.ghost.danger:hover { background: rgba(189, 31, 31, 0.1); color: #9d1717; border-color: #bd1f1f; }
 body[data-page='facturas'] ::selection { background: #0a0a0a; color: var(--terra); }
 
 /* Notas: lienzo completo, el árbol + documento ocupan todo el alto. */
@@ -345,6 +347,8 @@ body[data-page='notas'] .page-head { margin-bottom: 16px; }
   border: 1px solid var(--line-strong);
 }
 .btn.ghost:hover { background: var(--bone-deep); color: var(--ink); border-color: var(--ink-faint); }
+.btn.ghost.danger { color: #bd1f1f; border-color: rgba(189, 31, 31, 0.55); }
+.btn.ghost.danger:hover { background: rgba(189, 31, 31, 0.1); color: #9d1717; border-color: #bd1f1f; }
 .btn.small { padding: 4px 9px; font-size: 10.5px; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 

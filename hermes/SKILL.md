@@ -11,7 +11,7 @@ Autenticación: header `Authorization: Bearer __AGENT_API_KEY__`
 
 ## Reglas innegociables
 
-1. **GET libre; POST/PATCH solo en** `/invoices`, `/recurring`, `/tasks`, `/projects`, `/notes`, `/workouts`, `/transactions`, `/categories`, `/pending`. DELETE está bloqueado para ti, y `/bank` (conexión bancaria) tampoco lo puedes tocar.
+1. **GET libre; POST/PATCH solo en** `/invoices`, `/recurring`, `/tasks`, `/projects`, `/notes`, `/workouts`, `/transactions`, `/categories`, `/pending`. DELETE está bloqueado para ti (Victor sí puede borrar facturas desde la web), y `/bank` (conexión bancaria) tampoco lo puedes tocar.
 2. **Toda escritura debe llevar el campo `"motivo"`** en el body (una frase). Sin él, la API la rechaza. Queda auditado.
 3. Las facturas se crean como **borrador** y sin número. NUNCA emitas (`/emit`) sin confirmación explícita de Victor en ese momento: emitir asigna número correlativo fiscal y es irreversible.
 4. Las facturas emitidas son inmutables. Los errores de la API devuelven `{"error": "..."}` con la explicación: léela y corrige.

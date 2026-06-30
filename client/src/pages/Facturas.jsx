@@ -11,6 +11,7 @@ const TABS = [
 const emptyItem = () => ({ concept: '', quantity: 1, price: '' });
 
 const invoiceClient = (invoice) => invoice.clientSnapshot || invoice.client || {};
+const hasInvoiceNumber = (invoice) => invoice.number !== undefined && invoice.number !== null;
 
 function InvoicePaper({ invoice, settings }) {
   const client = invoiceClient(invoice);
@@ -288,8 +289,23 @@ export default function Facturas() {
   };
 
   const remove = async (inv) => {
-    if (!confirm('¿Borrar este borrador?')) return;
-    try { await api.del(`/invoices/${inv._id}`); load(); } catch (e) { setError(e.message); }
+    const label = hasInvoiceNumber(inv) ? `Nº ${inv.number}` : 'borrador';
+    if (inv.status === 'borrador') {
+      if (!confirm('¿Borrar este borrador?')) return;
+    } else {
+      const typed = prompt(`Vas a borrar la factura ${label}. Si es la última numerada, el contador retrocederá para rehacerla. Escribe BORRAR para confirmar:`);
+      if (typed !== 'BORRAR') return;
+    }
+    try {
+      const result = await api.del(`/invoices/${inv._id}`);
+      if (previewId === inv._id) setPreviewId('');
+      load();
+      if (result.nextInvoiceNumber !== undefined) {
+        setSettings((s) => ({ ...(s || {}), nextInvoiceNumber: result.nextInvoiceNumber }));
+      } else {
+        api.get('/settings').then(setSettings).catch(() => {});
+      }
+    } catch (e) { setError(e.message); }
   };
 
   return (
@@ -425,7 +441,7 @@ export default function Facturas() {
               <tbody>
                 {visible.map((inv) => (
                   <tr key={inv._id} className={preview?._id === inv._id ? 'selected' : ''}>
-                    <td>{inv.number ? `Nº ${inv.number}` : '—'}</td>
+                    <td>{hasInvoiceNumber(inv) ? `Nº ${inv.number}` : '—'}</td>
                     <td>{inv.clientSnapshot?.name || inv.client?.name}</td>
                     <td>{fecha(inv.issueDate || inv.createdAt)}</td>
                     <td className="num">{euros(inv.total)}</td>
@@ -440,12 +456,12 @@ export default function Facturas() {
                           <>
                             <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); openEdit(inv); }}>Editar</button>
                             <button className="btn terra small" onClick={(e) => { e.stopPropagation(); emit(inv); }}>Emitir</button>
-                            <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); remove(inv); }}>×</button>
                           </>
                         )}
                         {inv.status === 'enviada' && (
                           <button className="btn paid small" onClick={(e) => { e.stopPropagation(); markPaid(inv); }}>Cobrada ✓</button>
                         )}
+                        <button className="btn ghost small danger" onClick={(e) => { e.stopPropagation(); remove(inv); }}>Borrar</button>
                         <button className="btn ghost small" onClick={(e) => { e.stopPropagation(); saveAsRecurring(inv); }} title="Guardar como recurrente">⟳</button>
                       </div>
                     </td>
@@ -463,7 +479,7 @@ export default function Facturas() {
         <section className="invoice-preview card light">
               <div className="preview-head">
                 <div>
-                  <div className="preview-kicker">{preview.number ? `Nº ${preview.number}` : 'Borrador'}</div>
+                  <div className="preview-kicker">{hasInvoiceNumber(preview) ? `Nº ${preview.number}` : 'Borrador'}</div>
                   <h2>{invoiceClient(preview).name || 'Factura'}</h2>
                 </div>
                 <span className={`invoice-state ${preview.status}`}>{preview.status}</span>
@@ -479,6 +495,7 @@ export default function Facturas() {
                 {preview.status === 'enviada' && (
                   <button className="btn paid small" onClick={() => markPaid(preview)}>Cobrada ✓</button>
                 )}
+                <button className="btn ghost small danger" onClick={() => remove(preview)}>Borrar</button>
                 <button className="btn ghost small" onClick={() => setPreviewId('')}>Cerrar</button>
               </div>
               <div className="pdf-frame-shell">

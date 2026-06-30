@@ -7,7 +7,7 @@ Autenticación: header `Authorization: Bearer <AGENT_API_KEY>` en todas las llam
 
 - **GET**: libre en toda la API.
 - **POST/PUT/PATCH**: solo en `/invoices`, `/recurring`, `/tasks`, `/projects`, `/notes`, `/workouts`, `/transactions`, `/categories`, `/pending`. Toda escritura debe incluir el campo `"motivo"` en el body (una frase explicando el porqué). Queda registrada en auditoría. `/bank` (conexión bancaria) NO es escribible por el agente.
-- **DELETE**: prohibido. Si Victor quiere borrar algo, que lo haga desde la web.
+- **DELETE**: prohibido para el agente. Desde la web, Victor puede borrar facturas manualmente; si borra la última factura numerada, el contador retrocede para poder rehacerla.
 - Las facturas se crean siempre como **borrador** y sin número. Solo Victor las emite (o pídeselo explícitamente y emite con su confirmación vía `/invoices/:id/emit`).
 - Las facturas emitidas son inmutables: no intentes editarlas.
 - Los errores devuelven `{ "error": "explicación" }` — lee el mensaje, suele decir exactamente qué falta.

@@ -234,15 +234,43 @@ router.post('/import', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// Borrar: solo borradores y nunca el agente (bloqueado en agentGuard).
+// Borrar desde la web. El agente sigue bloqueado por agentGuard antes de llegar aquí.
+// Si se borra la última factura numerada, se retrocede el contador para poder rehacerla.
 router.delete('/:id', async (req, res) => {
+  if (req.auth?.type !== 'user') {
+    return res.status(403).json({ error: 'Solo Victor puede borrar facturas desde la web.' });
+  }
+
   const invoice = await Invoice.findById(req.params.id);
   if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
-  if (invoice.status !== 'borrador') {
-    return res.status(409).json({ error: 'Las facturas emitidas no se borran: romperías la numeración correlativa' });
-  }
+
+  const deletedNumber = Number.isFinite(Number(invoice.number)) ? Number(invoice.number) : null;
+  const deletedPdfs = [
+    invoice.importedPdf,
+    path.join(STORAGE_DIR, `borrador-${invoice._id}.pdf`),
+    deletedNumber !== null ? path.join(STORAGE_DIR, `factura-${deletedNumber}.pdf`) : null,
+  ].filter(Boolean);
+
   await invoice.deleteOne();
-  res.json({ ok: true });
+
+  let nextInvoiceNumber;
+  if (deletedNumber !== null) {
+    const settings = await Settings.get();
+    const maxNumbered = await Invoice.findOne({ number: { $ne: null } }).sort({ number: -1 }).select('number');
+    const maxExistingNumber = maxNumbered && Number.isFinite(Number(maxNumbered.number)) ? Number(maxNumbered.number) : null;
+    const desiredNext = maxExistingNumber !== null ? maxExistingNumber + 1 : deletedNumber;
+    if (Number(settings.nextInvoiceNumber) > desiredNext) {
+      settings.nextInvoiceNumber = desiredNext;
+      await settings.save();
+    }
+    nextInvoiceNumber = settings.nextInvoiceNumber;
+  }
+
+  for (const pdf of new Set(deletedPdfs)) {
+    fs.promises.unlink(pdf).catch(() => {});
+  }
+
+  res.json({ ok: true, nextInvoiceNumber });
 });
 
 module.exports = router;

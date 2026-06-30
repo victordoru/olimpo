@@ -80,7 +80,7 @@ function renderInvoiceHtml(invoice, settings) {
 
 async function generateInvoicePdf(invoice, settings) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
-  const filename = invoice.number
+  const filename = invoice.number !== undefined && invoice.number !== null
     ? `factura-${invoice.number}.pdf`
     : `borrador-${invoice._id}.pdf`;
   const outPath = path.join(STORAGE_DIR, filename);
