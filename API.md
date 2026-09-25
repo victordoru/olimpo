@@ -41,7 +41,7 @@ Autenticación: header `Authorization: Bearer <AGENT_API_KEY>` en todas las llam
 Las tareas se organizan en proyectos (áreas de vida: trabajo, casa, salud…) y tienen
 estado (`pendiente` → `en_curso` → `hecha`) y prioridad (`baja|media|alta|urgente`).
 La fecha es opcional y puede llevar hora; los recordatorios los envía el propio
-servidor por WhatsApp/Telegram (según el canal configurado en el `.env`) cuando vencen.
+servidor por WhatsApp/Telegram/Discord (según el canal configurado en el `.env`) cuando vencen.
 
 - `GET /projects` → áreas con su recuento de tareas sin terminar (úsalo para resolver nombre → id).
 - `POST /projects` → `{ "name": "Salud", "color": "#5f6b3c", "motivo": "..." }`.
@@ -69,7 +69,7 @@ servidor por WhatsApp/Telegram (según el canal configurado en el `.env`) cuando
 
 ### Notificaciones (solo web)
 
-- `GET /settings/notify` → `{ "channel": "whatsapp|callmebot|telegram|null" }` — canal activo.
+- `GET /settings/notify` → `{ "channel": "whatsapp|callmebot|telegram|discord|null" }` — canal activo.
 - `POST /settings/notify-test` → envía un mensaje de prueba por el canal activo.
 
 ## Notas

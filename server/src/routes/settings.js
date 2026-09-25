@@ -35,7 +35,7 @@ router.post('/notify-test', async (req, res) => {
   try {
     const channel = await notify('🔔 Prueba de notificación de Olimpo. Si lees esto, los recordatorios funcionan.');
     if (channel === 'console') {
-      return res.status(400).json({ error: 'Ningún canal configurado: añade las variables de WhatsApp/Telegram al .env del servidor.' });
+      return res.status(400).json({ error: 'Ningún canal configurado: añade las variables de WhatsApp/Telegram/Discord al .env del servidor.' });
     }
     res.json({ ok: true, channel });
   } catch (err) {

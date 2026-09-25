@@ -18,7 +18,7 @@ const taskSchema = new mongoose.Schema(
     // Si due tiene hora concreta (false = tarea "de todo el día").
     hasTime: { type: Boolean, default: false },
     // Recordatorios: el scheduler los envía por el canal configurado
-    // (WhatsApp/Telegram) cuando `at` vence. `sentAt` evita reenvíos.
+    // (WhatsApp/Telegram/Discord) cuando `at` vence. `sentAt` evita reenvíos.
     reminders: [
       {
         at: { type: Date, required: true },

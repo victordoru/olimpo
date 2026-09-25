@@ -110,7 +110,7 @@ function DueEditor({ task, onSave, onClose }) {
       </div>
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} />
-      <select value={preset} onChange={(e) => setPreset(e.target.value)} disabled={!date} title="Aviso por WhatsApp/Telegram">
+      <select value={preset} onChange={(e) => setPreset(e.target.value)} disabled={!date} title="Aviso por el canal configurado (Discord/Telegram)">
         {pendingReminders > 0 && <option value="keep">Mantener aviso actual</option>}
         {REMINDER_PRESETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
@@ -275,7 +275,7 @@ export default function Tareas() {
             </select>
             <input type="date" value={due} onChange={(e) => setDue(e.target.value)} title="Fecha (opcional)" />
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!due} title="Hora (opcional)" />
-            <select value={reminder} onChange={(e) => setReminder(e.target.value)} disabled={!due} title="Aviso por WhatsApp/Telegram">
+            <select value={reminder} onChange={(e) => setReminder(e.target.value)} disabled={!due} title="Aviso por el canal configurado (Discord/Telegram)">
               {REMINDER_PRESETS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
             <button className="btn terra">Añadir</button>

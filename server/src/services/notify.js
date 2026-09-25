@@ -7,9 +7,13 @@
 //   callmebot → CallMeBot (WhatsApp al móvil personal, gratis, setup de 1 minuto)
 //               CALLMEBOT_PHONE, CALLMEBOT_APIKEY
 //   telegram  → bot de Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+//   discord   → bot de Discord publicando en un canal (DISCORD_BOT_TOKEN,
+//               DISCORD_CHANNEL_ID; DISCORD_MENTION_USER_ID opcional para que
+//               el aviso te mencione y notifique aunque el servidor esté en
+//               "solo @menciones")
 //
 // NOTIFY_CHANNEL fuerza uno; si no, se usa el primero que esté configurado
-// (orden: whatsapp, callmebot, telegram). Sin ninguno, se loguea a consola.
+// (orden: whatsapp, callmebot, telegram, discord). Sin ninguno, se loguea a consola.
 
 async function sendWhatsAppCloud(text) {
   const { WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TO } = process.env;
@@ -50,6 +54,23 @@ async function sendTelegram(text) {
   }
 }
 
+async function sendDiscord(text) {
+  const { DISCORD_BOT_TOKEN, DISCORD_CHANNEL_ID, DISCORD_MENTION_USER_ID } = process.env;
+  const content = DISCORD_MENTION_USER_ID ? `<@${DISCORD_MENTION_USER_ID}> ${text}` : text;
+  const res = await fetch(`https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content,
+      allowed_mentions: { users: DISCORD_MENTION_USER_ID ? [DISCORD_MENTION_USER_ID] : [] },
+    }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(`Discord ${res.status}: ${data.message || 'error'}`);
+  }
+}
+
 const CHANNELS = {
   whatsapp: {
     send: sendWhatsAppCloud,
@@ -62,6 +83,10 @@ const CHANNELS = {
   telegram: {
     send: sendTelegram,
     configured: () => process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID,
+  },
+  discord: {
+    send: sendDiscord,
+    configured: () => process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_CHANNEL_ID,
   },
 };
 
